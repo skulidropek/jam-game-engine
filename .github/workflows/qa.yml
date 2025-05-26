@@ -33,15 +33,19 @@ jobs:
       - name: Build TEST SCENE
         # Build your program with the given configuration
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --parallel $(nproc) --target TEST_SCENE
-# TODO implement LESSON 1
-#      - name: Build LESSON 1
-#        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --parallel $(nproc) --target LESSON_1
-# TODO implement LESSON 2
-#      - name: Build LESSON 2
-#        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --parallel $(nproc) --target LESSON_2
-# TODO implement LESSON 3
-#      - name: Build LESSON 3
-#        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --parallel $(nproc) --target LESSON_3
+
+      # TODO implement LESSON 1
+      - name: Build LESSON 1
+        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --parallel $(nproc) --target LESSON_1
+
+      # TODO implement LESSON 2
+      - name: Build LESSON 2
+        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --parallel $(nproc) --target LESSON_2
+
+      # TODO implement LESSON 3
+      - name: Build LESSON 3
+        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --parallel $(nproc) --target LESSON_3
+
 # TODO implement LESSON 4
 #      - name: Build LESSON 4
 #        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --parallel $(nproc) --target LESSON_4
