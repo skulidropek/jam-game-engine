@@ -1,8 +1,0 @@
-{
-	"InstallScripts" : 
-	[
-		"/home/user/jam-game-engine/build/cmake_install.cmake",
-		"/home/user/jam-game-engine/build/engine/cmake_install.cmake"
-	],
-	"Parallel" : false
-}
