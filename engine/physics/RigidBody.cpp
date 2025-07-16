@@ -228,9 +228,53 @@ CollisionInfo RigidBody::EPA(const Simplex &simplex, std::shared_ptr<RigidBody> 
 
     size_t iters = 0;
     while (minDistance == std::numeric_limits<double>::max() && iters++ < size() + obj->size()) {
-        // TODO: implement (lesson 7)
+        minNormal = normals[minFace].normal;
+        minDistance = normals[minFace].distance;
+        Vec3D support = _support(obj, minNormal);
 
-        break;
+        double sDistance = minNormal.dot(support);
+
+        if(std::abs(sDistance - minDistance) > Consts::EPA_EPS) {
+            minDistance = std::numeric_limits<double>::max();
+            std::vector<std::pair<size_t, size_t>> uniqueEdges;
+
+            size_t f = 0;
+
+            for(auto& normal : normals) {
+                if(normal.normal.dot(support) > 0) {
+                    uniqueEdges = _addIfUniqueEdge(uniqueEdges, faces, f + 0, f + 1);
+                    uniqueEdges = _addIfUniqueEdge(uniqueEdges, faces, f + 1, f + 2);
+                    uniqueEdges = _addIfUniqueEdge(uniqueEdges, faces, f + 2, f + 0);
+
+                    // Удаляем элементы в обратном порядке, чтобы избежать проблем с индексами
+                    faces.erase(faces.begin() + f + 2);
+                    faces.erase(faces.begin() + f + 1);
+                    faces.erase(faces.begin() + f);
+                }
+                else {
+                    f += 3;
+                }
+            }
+
+            std::vector<size_t> newFaces;
+            newFaces.reserve(uniqueEdges.size() * 3);
+
+            for(auto[i1, i2] : uniqueEdges) {
+                newFaces.push_back(i1);
+                newFaces.push_back(i2);
+                newFaces.push_back(polytope.size());
+            }
+
+            polytope.push_back(support);
+
+            faces.insert(faces.end(), newFaces.begin(), newFaces.end());
+
+            auto newFaceNormals = _getFaceNormals(polytope, faces);
+
+            normals = std::move(newFaceNormals.first);
+
+            minFace = newFaceNormals.second;
+        }
     }
 
     _collisionNormal = minNormal;
@@ -285,13 +329,20 @@ RigidBody::_addIfUniqueEdge(const std::vector<std::pair<size_t, size_t>> &edges,
     //    / A \ /    B: 0-2
     //   1-->--2
 
-    // TODO: implement (lesson 7)
+    auto reverse = std::find(newEdges.begin(), newEdges.end(), std::make_pair(faces[b], faces[a]));
+
+    if (reverse != newEdges.end()) {
+        newEdges.erase(reverse);
+    }
+    else {
+        newEdges.emplace_back(faces[a], faces[b]);
+    }
 
     return newEdges;
 }
 
 void RigidBody::solveCollision(const CollisionInfo &collision) {
-    // TODO: implement (lesson 7)
-
+    
+    translate(-collision.normal * collision.depth);
     collisionCallBack(collision);
 }
