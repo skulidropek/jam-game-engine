@@ -40,17 +40,26 @@ Vec3D RigidBody::_findFurthestPoint(const Vec3D &direction) {
     Vec3D maxPoint{0, 0, 0};
     double maxDistance = -std::numeric_limits<double>::max();
 
+    Vec3D transformedDirection = (invModel() * direction).normalized();
+
     for(auto & it : _hitBox) {
-        // TODO: implement (lesson 6)
+        double distance = it.dot(transformedDirection);
+
+        if (distance > maxDistance) {
+            maxDistance = distance;
+            maxPoint = it;
+        }
     }
 
-    return maxPoint;
+    return model() * maxPoint + position();
 }
 
 Vec3D RigidBody::_support(std::shared_ptr<RigidBody> obj, const Vec3D &direction) {
-    // TODO: implement (lesson 6)
 
-    return Vec3D();
+    Vec3D p1 = _findFurthestPoint(direction);
+    Vec3D p2 = obj->_findFurthestPoint(-direction);
+
+    return p1 - p2;
 }
 
 NextSimplex RigidBody::_nextSimplex(const Simplex &points) {
@@ -77,7 +86,12 @@ NextSimplex RigidBody::_lineCase(const Simplex &points) {
     Vec3D ab = b - a;
     Vec3D ao = -a;
 
-    // TODO: implement (lesson 6)
+    if (ab.dot(ao) > 0) {
+        newDirection = ab.cross(ao).cross(ab);
+    } else {
+        newPoints = Simplex{a};
+        newDirection = ao;
+    }
 
     return NextSimplex{newPoints, newDirection, false};
 }
@@ -94,8 +108,27 @@ NextSimplex RigidBody::_triangleCase(const Simplex &points) {
     Vec3D ac = c - a;
     Vec3D ao = -a;
 
-    // TODO: implement (lesson 6)
+    Vec3D abc = ab.cross(ac);
 
+    if (abc.cross(ac).dot(ao) > 0) {
+        if (ac.dot(ao) > 0) {
+            newPoints = Simplex{a, c};
+            newDirection = abc.cross(ao).cross(ac);
+        } else {
+            return _lineCase(Simplex{a, b});
+        }
+    } else {
+        if (ab.cross(abc).dot(ao) > 0) {
+            return _lineCase(Simplex{a, b});
+        } else {
+            if(abc.dot(ao) > 0) {
+                newDirection = abc;
+            } else {
+                newDirection = -abc;
+                newPoints = Simplex{a, c, b};
+            }
+        }
+    }
     return NextSimplex{newPoints, newDirection, false};
 }
 
@@ -110,7 +143,21 @@ NextSimplex RigidBody::_tetrahedronCase(const Simplex &points) {
     Vec3D ad = d - a;
     Vec3D ao = -a;
 
-    // TODO: implement (lesson 6)
+    Vec3D abc = ab.cross(ac);
+    Vec3D acd = ac.cross(ad);
+    Vec3D adb = ad.cross(ab);
+    
+    if (abc.dot(ao) > 0) {
+        return _triangleCase(Simplex{a, b, c});
+    }
+
+    if (acd.dot(ao) > 0) {
+        return _triangleCase(Simplex{a, c, d});
+    }
+
+    if (adb.dot(ao) > 0) {
+        return _triangleCase(Simplex{a, d, b});
+    }
 
     return NextSimplex{points, Vec3D(), true};
 }
@@ -132,11 +179,31 @@ std::pair<bool, Simplex> RigidBody::checkGJKCollision(std::shared_ptr<RigidBody>
 
     size_t iters = 0;
     while (iters++ < size() + obj->size()) {
-        // TODO: implement (lesson 6)
 
-        break;
+        support = _support(obj, direction);
+
+        if (support.dot(direction) <= 0) {
+            return std::make_pair(false, points); // no collision
+        }
+
+        points.push_front(support);
+        NextSimplex nextSimplex = _nextSimplex(points);
+
+        direction = nextSimplex.newDirection;
+        points = nextSimplex.newSimplex;
+
+        if (nextSimplex.finishSearching) {
+
+            if (obj->isCollider()) {
+                _isCollider = true;
+            }
+
+            return std::make_pair(true, points); // collision
+        }
+        
+        
     }
-    return std::make_pair(false, points);
+    return std::make_pair(false, points); // no collision 
 }
 
 CollisionInfo RigidBody::EPA(const Simplex &simplex, std::shared_ptr<RigidBody> obj) {
