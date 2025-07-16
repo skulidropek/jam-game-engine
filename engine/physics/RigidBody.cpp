@@ -20,19 +20,20 @@ RigidBody::RigidBody(const Mesh &mesh, bool useSimpleBox) : Mesh(mesh), _hitBox(
 }
 
 void RigidBody::updatePhysicsState() {
-    // TODO: implement (lesson 5)
+    _velocity = _velocity + _acceleration * Time::deltaTime();
+    translate(_velocity * Time::deltaTime());
 }
 
 void RigidBody::setVelocity(const Vec3D &velocity) {
-    // TODO: implement (lesson 5)
+    _velocity = velocity;
 }
 
 void RigidBody::addVelocity(const Vec3D &velocity) {
-    // TODO: implement (lesson 5)
+    _velocity = _velocity + velocity;
 }
 
 void RigidBody::setAcceleration(const Vec3D &acceleration) {
-    // TODO: implement (lesson 5)
+    _acceleration = acceleration;
 }
 
 Vec3D RigidBody::_findFurthestPoint(const Vec3D &direction) {
