@@ -22,6 +22,8 @@ std::vector<Triangle> Camera::project(std::shared_ptr<Mesh> mesh) {
     Matrix4x4 M = mesh->model();
     Matrix4x4 V = Matrix4x4::View(left(), up(), lookAt(), position());
 
+    std::vector<Triangle> clippedTriangles, tempBuffer;
+
     for (auto &t : mesh->triangles()) {
         // TODO: implement (lessons 3, 4)
         Triangle modelTriangle = t * M;
@@ -32,25 +34,46 @@ std::vector<Triangle> Camera::project(std::shared_ptr<Mesh> mesh) {
             continue;
         }
 
-        Triangle projected = modelTriangle * _SP;
+        Triangle modelViewTriangle = modelTriangle * V;
 
-        Triangle projected_normalized = Triangle(
-            projected[0] / projected[0].w(),
-            projected[1] / projected[1].w(),
-            projected[2] / projected[2].w()
-        );
+        clippedTriangles.clear();
+        tempBuffer.clear();
 
-        double dotColor = (0.1 * std::abs(dot) + 0.9);
+        clippedTriangles.emplace_back(modelViewTriangle);
+        for(auto& plane : _clipPlanes) {
+            while(!clippedTriangles.empty()) {
+                auto clipResult = plane.clip(clippedTriangles.back());
+                clippedTriangles.pop_back();
 
-        projected_normalized.setColor(
-            sf::Color(
-                t.color().r * dotColor,
-                t.color().g * dotColor,
-                t.color().b * dotColor
-            )
-        );
+                for(auto &clipTri : clipResult) {
+                    tempBuffer.emplace_back(clipTri);
+                }
+            }
 
-        _triangles.emplace_back(projected_normalized);
+            clippedTriangles.swap(tempBuffer);
+        }
+
+        for(auto& clippedTriangle : clippedTriangles) {
+            Triangle projected = clippedTriangle * _SP;
+
+            Triangle projected_normalized = Triangle(
+                projected[0] / projected[0].w(),
+                projected[1] / projected[1].w(),
+                projected[2] / projected[2].w()
+            );
+
+            double dotColor = (0.1 * std::abs(dot) + 0.9);
+
+            projected_normalized.setColor(
+                sf::Color(
+                    t.color().r * dotColor,
+                    t.color().g * dotColor,
+                    t.color().b * dotColor
+                )
+            );
+
+            _triangles.emplace_back(projected_normalized);
+        }
     }
 
     return this->_triangles;
